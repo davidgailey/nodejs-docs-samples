@@ -1,3 +1,7 @@
+// https://cloud.google.com/speech-to-text/docs/async-time-offsets
+// https://cloud.google.com/speech-to-text/docs/quickstart-client-libraries
+
+
 // Imports the Google Cloud client library
 const speech = require('@google-cloud/speech');
 const fs = require('fs')

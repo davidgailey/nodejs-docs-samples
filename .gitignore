@@ -12,3 +12,4 @@ yarn.lock
 package-lock.json
 
 transcription-api-257518-1de89915ba82.json
+resources/*.wav

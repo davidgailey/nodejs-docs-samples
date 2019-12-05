@@ -1,0 +1,20 @@
+{
+	"results": [
+		{
+			"alternatives": [
+				{
+					"transcript": "but my wife is a at 4 season start for a bit her camera she like a Nikon camera and that particular model had focusing issues so it would like thought if I guess I was like always off during weddings and then",
+					"confidence": 0.9034894108772278
+				}
+			]
+		},
+		{
+			"alternatives": [
+				{
+					"transcript": " she knew how to work it so that they would focus correctly answered and then she always nice of time. Good Focus out of it but then I started second shooting for weddings and she",
+					"confidence": 0.9126417636871338
+				}
+			]
+		}
+	]
+}

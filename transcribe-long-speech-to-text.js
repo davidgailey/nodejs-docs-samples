@@ -5,6 +5,8 @@
 // Imports the Google Cloud client library
 const speech = require('@google-cloud/speech');
 
+const fs = require('fs');
+
 // Creates a client
 const clientSpeech = new speech.SpeechClient();
 
@@ -16,16 +18,37 @@ const clientSpeech = new speech.SpeechClient();
 // const sampleRateHertz = 16000;
 // const languageCode = 'BCP-47 language code, e.g. en-US';
 
-const gcsUri = 'gs://transcription-api-bucket/00001.wav';
-const encoding = 'WAV';
-const sampleRateHertz = 48000;
+// james farrah wav - 1h 37m
+// const gcsUri = 'gs://transcription-api-bucket/00001.wav';
+// const transcriptionFilename = '00001.wav';
+// const encoding = 'WAV';
+// const sampleRateHertz = 48000;
+// const languageCode = 'en-US';
+// const audioChannelCount = 2;
+
+// take note wideman and Cheraine - 28m
+const gcsUri = 'gs://transcription-api-bucket/tn-weidman.mp3';
+const transcriptionFilename = 'tn-weidman.mp3';
+const encoding = 'MP3';
+const sampleRateHertz = 44100;
 const languageCode = 'en-US';
+const audioChannelCount = 1;
+const diarizationConfig = {
+	"enableSpeakerDiarization": true,
+	"minSpeakerCount": 2,
+	"maxSpeakerCount": 2
+};
+enableWordTimeOffsets = true;
+enableAutomaticPunctuation = true;
 
 const config = {
 	encoding: encoding,
 	sampleRateHertz: sampleRateHertz,
 	languageCode: languageCode,
-	audioChannelCount: 2,
+	audioChannelCount: audioChannelCount,
+	diarizationConfig: diarizationConfig,
+	enableWordTimeOffsets: enableWordTimeOffsets,
+	enableAutomaticPunctuation: enableAutomaticPunctuation,
 };
 
 const audio = {
@@ -37,14 +60,68 @@ const speechRequest = {
 	audio: audio,
 };
 
+// readData function
+const readData = (data, path) => {
+	try {
+		// fs.writeFileSync(path, JSON.stringify(data))
+		// fs.writeFileSync(`./transcriptions/${transcriptionFilename}-${Date.now()}.txt`, data);
+		var text = fs.readFileSync('transcriptions/tn-weidman.mp3-1575490620201.txt','utf8');
+		return text;
+	} catch (err) {
+		console.error(err)
+	}
+}
+
 // storeData function
 const storeData = (data, path) => {
 	try {
 		// fs.writeFileSync(path, JSON.stringify(data))
-		fs.writeFileSync(`./transcriptions/00001-${Date.now()}.txt` , data);
+		fs.writeFileSync(`./transcriptions/${transcriptionFilename}-${Date.now()}.txt`, data);
 	} catch (err) {
 		console.error(err)
 	}
+}
+
+// sec2time function
+function sec2time(timeInSeconds) {
+	var pad = function(num, size) { return ('000' + num).slice(size * -1); },
+	time = parseFloat(timeInSeconds).toFixed(3),
+	hours = Math.floor(time / 60 / 60),
+	minutes = Math.floor(time / 60) % 60,
+	seconds = Math.floor(time - minutes * 60),
+	milliseconds = time.slice(-3);
+
+	// return pad(hours, 2) + ':' + pad(minutes, 2) + ':' + pad(seconds, 2) + ',' + pad(milliseconds, 3);
+	return pad(minutes, 2) + 'm ' + pad(seconds, 2) + 's';
+}
+
+// formatTranscript function
+const formatTranscript = (data) => {
+	const transcription = data.results
+		.map(result => {
+			// get start time of first word
+			const wordInfo = result.alternatives[0].words[0]
+			const startSecs =
+				`${wordInfo.startTime.seconds}` +
+				`.` +
+				wordInfo.startTime.nanos / 100000000;
+			
+			// const endSecs =
+			// 	`${wordInfo.endTime.seconds}` +
+			// 	`.` +
+			// 	wordInfo.endTime.nanos / 100000000;
+
+			// get speaker 
+			const speaker = wordInfo.speakerTag || 1;
+
+			if(typeof result.alternatives[0].transcript !== 'undefined')
+				return `${sec2time(startSecs)}:\n\t${result.alternatives[0].transcript}`;
+		})
+		.join('\n');
+
+	
+
+	storeData(transcription);
 }
 
 // // Detects speech in the audio file. This creates a recognition job that you
@@ -64,29 +141,35 @@ const storeData = (data, path) => {
 // 		console.error("transcript error", err);
 // 	});
 
-clientSpeech
-      .longRunningRecognize(speechRequest)
-      .then(data => {
-        const operation = data[0];
-        console.log('got a promise representation', data);
+// clientSpeech
+// 	.longRunningRecognize(speechRequest)
+// 	.then(data => {
+// 		const operation = data[0];
+// 		console.log('got a promise representation', data);
 
-        const errorHandler = err => {
-          console.log(err);
-          throw(err)
-        }
-        const completeHandler = longRRResponse => {
-          console.log('**** response ****');
-		  console.log(JSON.stringify(longRRResponse, null, '\t'));
-		  storeData(JSON.stringify(longRRResponse, null, '\t'));
-        }
-        const progressHandler = (metadata, apiResponse) => {
-          console.log('progress ', metadata);
-        }
-        operation.on('error', errorHandler)
-        operation.on('complete', completeHandler)
-        operation.on('progress', progressHandler)
-      })
-      .catch(err => {
-        console.error('ERROR:', err);
-        // fs.unlink(name);
-      });
+// 		const errorHandler = err => {
+// 			console.log(err);
+// 			throw (err)
+// 		}
+// 		const completeHandler = longRRResponse => {
+// 			console.log('**** response ****');
+// 			console.log(longRRResponse);
+// 			console.log('**** response ****');
+// 			console.log(JSON.stringify(longRRResponse, null, '\t'));
+// 			// storeData(JSON.stringify(longRRResponse, null, '\t'));
+
+// 			formatTranscript(longRRResponse);
+// 		}
+// 		const progressHandler = (metadata, apiResponse) => {
+// 			console.log('progress ', metadata);
+// 		}
+// 		operation.on('error', errorHandler)
+// 		operation.on('complete', completeHandler)
+// 		operation.on('progress', progressHandler)
+// 	})
+// 	.catch(err => {
+// 		console.error('ERROR:', err);
+// 		// fs.unlink(name);
+// 	});
+
+formatTranscript(JSON.parse(readData()));

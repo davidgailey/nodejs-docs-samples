@@ -124,6 +124,80 @@ const formatTranscript = (data) => {
 	storeData(transcription);
 }
 
+
+
+
+// formatTranscript with Speakers function
+const formatSpeakerTranscript = (data) => {
+
+	// initialize variable to keep track of speaker
+	global.lastSpeaker = 0;
+
+	// last results object is different, it has one big alternatives array with speaker tags for each word
+	const transcription = () => {
+		return data.results[data.results.length -1].alternatives[0].words
+		.map((wordInfo, index) => {
+
+			// wordInfo looks like this:
+				// {
+				// 	"startTime": {
+				// 		"seconds": "4",
+				// 		"nanos": 200000000
+				// 	},
+				// 	"endTime": {
+				// 		"seconds": "4",
+				// 		"nanos": 800000000
+				// 	},
+				// 	"word": "Welcome",
+				// 	"speakerTag": 1
+				// },
+
+			// get start time of first word
+			
+			const startSecs =
+				`${wordInfo.startTime.seconds}` +
+				`.` +
+				wordInfo.startTime.nanos / 100000000;
+			
+			// const endSecs =
+			// 	`${wordInfo.endTime.seconds}` +
+			// 	`.` +
+			// 	wordInfo.endTime.nanos / 100000000;
+
+			// get speaker 
+			const speaker = wordInfo.speakerTag;
+
+			// init last speaker - leave as is if it is set, 
+			// lastSpeaker = lastSpeaker !== 0 ? lastSpeaker : speaker;
+
+			// if last speaker is different, add speaker label and time with word
+			if (global.lastSpeaker !== speaker){
+
+				// set last speaker to current speaker
+				global.lastSpeaker = speaker;
+
+
+				return `\nSpeaker ${speaker} (${sec2time(startSecs)}) \n\t${wordInfo.word}`;
+
+			}else{
+
+				// set last speaker to current speaker
+				global.lastSpeaker = speaker;
+
+				return wordInfo.word;
+			}
+
+			
+
+			// if(typeof result.alternatives[0].transcript !== 'undefined')
+			// 	return `${sec2time(startSecs)}:\n\t${result.alternatives[0].transcript}`;
+		})
+		.join(' ');
+	}
+
+	storeData(transcription());
+}
+
 // // Detects speech in the audio file. This creates a recognition job that you
 // // can wait for now, or get its result later.
 // const [operation] = client.longRunningRecognize(request);
@@ -172,4 +246,4 @@ const formatTranscript = (data) => {
 // 		// fs.unlink(name);
 // 	});
 
-formatTranscript(JSON.parse(readData()));
+formatSpeakerTranscript(JSON.parse(readData()));
